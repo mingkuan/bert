@@ -21,6 +21,7 @@ from __future__ import print_function
 import collections
 import csv
 import os
+import sys
 import modeling
 import optimization
 import tokenization
@@ -1090,6 +1091,7 @@ def main(_):
 
 
 if __name__ == "__main__":
+  csv.field_size_limit(sys.maxsize)
   flags.mark_flag_as_required("data_dir")
   flags.mark_flag_as_required("task_name")
   flags.mark_flag_as_required("vocab_file")
