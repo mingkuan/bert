@@ -421,29 +421,21 @@ class FullCategorizeProcessor(DataProcessor):
         for (i, line) in enumerate(lines):
             #baby clothes 0 3 months guirl   147333|147211   0.5|0.5
             query, labels, probs = line[0], line[1], line[2]
-            majorLabelDict=collections.defaultdict(lambda : 0.0)
-            tmpLs, tmpProbs = labels.split('|'), probs.split('|')
-            for idx in range(len(tmpLs)):
-                majorLabelDict[tmpLs[idx]] = majorLabelDict[tmpLs[idx]] + float(tmpProbs[idx])
-            mc=0
-            for mlabel in majorLabelDict.keys():
-                if majorLabelDict[mlabel] < 0.01 or mc > 1:
-                    #skip very unlikely cases
-                    continue
-                #add major label to training data
-                mc+=1
-                guid = "%s-%s-%d" % (set_type, i, mc)
-                text_a = tokenization.convert_to_unicode(query)
-                if set_type == "test":
-                    label = "0"
-                else:
-                    label = tokenization.convert_to_unicode(mlabel)
-                # validate the labels befor put them into training or testing
-                if label not in self.validlabels:
-                    logging.warning("Invalid example in %s, \nline:%s" % (set_type, line) )
-                    continue
-                examples.append(
-                    InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+            if float(probs.split('|')[0]) < 0.5:
+                continue
+            mlabel = labels.split('|')[0]
+            guid = "%s-%s" % (set_type, i)
+            text_a = tokenization.convert_to_unicode(query)
+            if set_type == "test":
+                label = "0"
+            else:
+                label = tokenization.convert_to_unicode(mlabel)
+            # validate the labels befor put them into training or testing
+            if label not in self.validlabels:
+                logging.warning("Invalid example in %s, \nline:%s" % (set_type, line) )
+                continue
+            examples.append(
+                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
 
 
