@@ -384,6 +384,70 @@ class EbayCategorizeProcessor(DataProcessor):
         return examples
 
 
+
+class FullCategorizeProcessor(DataProcessor):
+    """Processor for the Full eBay categorization data set."""
+
+    def get_train_examples(self, data_dir):
+        """See base class."""
+        tf.logging.info("LOOKING AT {}".format(os.path.join(data_dir, "train.tsv")))
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "multi-label-cat.train.tsv")), "train")
+
+    def get_dev_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "multi-label-cat.test.tsv")), "dev")
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, "multi-label-cat.test.tsv")), "test")
+
+
+    def get_labels(self, data_dir):
+        """See base class."""
+        fullCatLabels=set()
+        # skip the first comment line
+        for line in self._read_tsv(os.path.join(data_dir, "cat_tree_182ver.tsv")):
+            fullCatLabels.add(line[1])
+        self.validlabels = fullCatLabels
+        return list(fullCatLabels)
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        for (i, line) in enumerate(lines):
+            #baby clothes 0 3 months guirl   147333|147211   0.5|0.5
+            query, labels, probs = line[0], line[1], line[2]
+            majorLabelDict=collections.defaultdict(lambda : 0.0)
+            tmpLs, tmpProbs = labels.split('|'), probs.split('|')
+            for idx in range(len(tmpLs)):
+                majorLabelDict[tmpLs[idx]] = majorLabelDict[tmpLs[idx]] + float(tmpProbs[idx])
+            mc=0
+            for mlabel in majorLabelDict.keys():
+                if majorLabelDict[mlabel] < 0.01:
+                    #skip very unlikely cases
+                    continue
+                #add major label to training data
+                mc+=1
+                guid = "%s-%s-%d" % (set_type, i, mc)
+                text_a = tokenization.convert_to_unicode(query)
+                if set_type == "test":
+                    label = "0"
+                else:
+                    label = tokenization.convert_to_unicode(mlabel)
+                # validate the labels befor put them into training or testing
+                if label not in self.validlabels:
+                    logging.warning("Invalid example in %s, \nline:%s" % (set_type, line) )
+                    continue
+                examples.append(
+                    InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+        return examples
+
+
+
+
 class ColaProcessor(DataProcessor):
   """Processor for the CoLA data set (GLUE version)."""
 
@@ -840,6 +904,7 @@ def main(_):
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
       "ebaycat": EbayCategorizeProcessor,
+      "fullcat": FullCategorizeProcessor,
   }
 
   tokenization.validate_case_matches_checkpoint(FLAGS.do_lower_case,
