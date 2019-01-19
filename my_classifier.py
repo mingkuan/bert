@@ -427,7 +427,7 @@ class FullCategorizeProcessor(DataProcessor):
                 majorLabelDict[tmpLs[idx]] = majorLabelDict[tmpLs[idx]] + float(tmpProbs[idx])
             mc=0
             for mlabel in majorLabelDict.keys():
-                if majorLabelDict[mlabel] < 0.01:
+                if majorLabelDict[mlabel] < 0.01 or mc > 1:
                     #skip very unlikely cases
                     continue
                 #add major label to training data
