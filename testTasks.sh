@@ -55,6 +55,7 @@ python my_classifier.py \
   --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
   --max_seq_length=20 \
   --train_batch_size=32 \
+  --save_checkpoints_steps=100000 \
   --learning_rate=2e-5 \
-  --num_train_epochs=1.0 \
+  --num_train_epochs=3.0 \
   --output_dir=./fullcat_output/
